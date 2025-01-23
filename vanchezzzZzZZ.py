@@ -1,10 +1,22 @@
 from telethon import TelegramClient
 import asyncio
 import time
-import keyboard
+import os
+import platform
 
-api_id = '22055307'
-api_hash = 'f9be6b0bd1f4e2d74eb9e148bb6f1c24'
+
+is_android = "ANDROID_ROOT" in os.environ
+
+
+if is_android:
+    from pynput import keyboard
+else:
+    import keyboard  # для ПК
+
+# твои данные с сайта my.telegram.org
+api_id = '22055307'  # сюда вставь свой api id
+api_hash = 'f9be6b0bd1f4e2d74eb9e148bb6f1c24'  # сюда вставь свой api hash
+
 
 session_name = 'my_account'
 
@@ -58,13 +70,25 @@ async def main():
                     print(f"Ара, ошибка при отправке сообщения: {e}, дон.")
                     return
 
-    def on_r_press(event):
+    def on_press(key):
         nonlocal stop_sending
-        if event.name == 'r':
-            stop_sending = True
-            print("Ара, клавиша R нажата, дон. Останавливаюсь...")
+        if is_android:
+            try:
+                if key.char == 'r':
+                    stop_sending = True
+                    print("Ара, клавиша R нажата, дон. Останавливаюсь...")
+            except AttributeError:
+                pass
+        else:
+            if key.name == 'r':
+                stop_sending = True
+                print("Ара, клавиша R нажата, дон. Останавливаюсь...")
 
-    keyboard.on_press(on_r_press)
+    if is_android:
+        listener = keyboard.Listener(on_press=on_press)
+        listener.start()
+    else:
+        keyboard.on_press(on_press)
 
     while True:
         await send_messages()
@@ -79,7 +103,8 @@ async def main():
             print("Ара, скрипт завершен, дон.")
             break
 
-    keyboard.unhook_all()
+    if not is_android:
+        keyboard.unhook_all()
     await client.disconnect()
 
 if __name__ == '__main__':
